@@ -35,6 +35,9 @@ type VlessOutbound struct {
 /*
 vless://b1e41627-a3e9-4ebd-9c92-c366dd82b13f@xray.ibgfw.top:2083?encryption=none&security=tls&type=ws&host=&path=/wSXCvstU/#xray.ibgfw.top%3A2083
 */
-func (that *VlessOutbound) parse(rawUri string) {
+func (that *VlessOutbound) parse(rawUri string) {}
 
+func (that *VlessOutbound) GetConfigStr(rawUri string) string {
+	that.parse(rawUri)
+	return ""
 }
