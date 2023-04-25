@@ -36,6 +36,7 @@ type TrojanOutboud struct {
 	Security string
 	Type     string
 	Path     string
+	Raw      string
 }
 
 /*
@@ -55,6 +56,7 @@ func (that *TrojanOutboud) parse(rawUri string) {
 }
 
 func (that *TrojanOutboud) GetConfigStr(rawUri string) (r string) {
+	that.Raw = rawUri
 	that.parse(rawUri)
 	j := gjson.New(TrojanStr)
 	j.Set("servers.0.address", that.Address)
@@ -74,4 +76,8 @@ func (that *TrojanOutboud) GetConfigStr(rawUri string) (r string) {
 	j = gjson.New(confStr)
 	j.Set("outbounds.0.protocol", "trojan")
 	return j.MustToJsonIndentString()
+}
+
+func (that *TrojanOutboud) GetRawUri() string {
+	return that.Raw
 }

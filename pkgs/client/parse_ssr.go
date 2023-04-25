@@ -36,6 +36,7 @@ type SSROutbound struct {
 	Port     int
 	Method   string
 	Password string
+	Raw      string
 }
 
 /*
@@ -82,6 +83,7 @@ func (that *SSROutbound) parse(rawUri string) {
 }
 
 func (that *SSROutbound) GetConfigStr(rawUri string) (r string) {
+	that.Raw = rawUri
 	that.parse(rawUri)
 	j := gjson.New(SSRStr)
 	j.Set("servers.0.email", that.Email)
@@ -95,4 +97,8 @@ func (that *SSROutbound) GetConfigStr(rawUri string) (r string) {
 	j = gjson.New(confStr)
 	j.Set("outbounds.0.protocol", "ssr")
 	return j.MustToJsonIndentString()
+}
+
+func (that *SSROutbound) GetRawUri() string {
+	return that.Raw
 }

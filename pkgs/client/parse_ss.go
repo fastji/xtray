@@ -78,3 +78,7 @@ func (that *SSOutbound) GetConfigStr(rawUri string) (r string) {
 	j.Set("outbounds.0.protocol", "ss")
 	return j.MustToJsonIndentString()
 }
+
+func (that *SSOutbound) GetRawUri() string {
+	return that.Raw
+}
