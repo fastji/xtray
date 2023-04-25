@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/base64"
+	"io"
 	"strings"
 )
 
@@ -16,4 +18,8 @@ func DecodeBase64(str string) (res string) {
 		res = string(s)
 	}
 	return
+}
+
+func StringToReader(str string) io.Reader {
+	return bytes.NewReader([]byte(str))
 }
