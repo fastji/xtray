@@ -3,7 +3,9 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io"
+	"os/user"
 	"strings"
 )
 
@@ -22,4 +24,13 @@ func DecodeBase64(str string) (res string) {
 
 func StringToReader(str string) io.Reader {
 	return bytes.NewReader([]byte(str))
+}
+
+func GetHomeDir() (homeDir string) {
+	u, err := user.Current()
+	if err != nil {
+		fmt.Println("[CurrentUser]", err)
+		return
+	}
+	return u.HomeDir
 }
