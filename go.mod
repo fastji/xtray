@@ -3,6 +3,7 @@ module github.com/moqsien/xtray
 go 1.20
 
 require (
+	github.com/Asutorufa/yuhaiin v0.3.1-rc.7
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/gogf/gf v1.16.9
 	github.com/moqsien/free v0.0.0-20230424044316-6c5663359ea3
@@ -10,7 +11,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
@@ -69,6 +70,6 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gvisor.dev/gvisor v0.0.0-20220901235040-6ca97ef2ce1c // indirect
+	gvisor.dev/gvisor v0.0.0-20230324231650-b265e3e2c165 // indirect
 	lukechampine.com/blake3 v1.1.7 // indirect
 )
