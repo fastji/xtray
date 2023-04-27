@@ -13,4 +13,13 @@ type Conf struct {
 	PorxyFile    string `json:"proxy_file"`
 }
 
-var WorkDir = filepath.Join(utils.GetHomeDir(), ".gvc/proxy_files")
+var DefaultWorkDir = filepath.Join(utils.GetHomeDir(), ".gvc/proxy_files")
+
+func NewConf() (conf *Conf) {
+	conf = &Conf{}
+	conf.WorkDir = DefaultWorkDir
+	conf.FetcherUrl = "https://gitee.com/moqsien/test/raw/master/conf.txt"
+	conf.RawProxyFile = filepath.Join(conf.WorkDir, "raw_proxy.json")
+	conf.PorxyFile = filepath.Join(conf.WorkDir, "latest.json")
+	return
+}
