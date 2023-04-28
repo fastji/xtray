@@ -22,21 +22,20 @@ import (
 	}]
 */
 var SSStr string = `{
-	"servers": [{
-		"address": "127.0.0.1",
+	"servers": [
+	  {
+		"address": "",
 		"port": 1234,
-		"users": [{
-			"user": "test user",
-			"pass": "test pass",
-			"level": 0
-		}]
-	}]
+		"method": "2022-blake3-aes-128-gcm",
+		"password": ""
+	  }
+	]
 }`
 
 type SSOutbound struct {
 	Address  string
 	Port     int
-	Username string
+	Method   string
 	Password string
 	Raw      string
 }
@@ -57,7 +56,7 @@ func (that *SSOutbound) parse(rawUri string) {
 			if u, err := url.Parse(_uri); err == nil {
 				that.Address = u.Hostname()
 				that.Port, _ = strconv.Atoi(u.Port())
-				that.Username = u.User.Username()
+				that.Method = u.User.Username()
 				that.Password, _ = u.User.Password()
 			}
 		}
@@ -69,16 +68,21 @@ func (that *SSOutbound) GetConfigStr(rawUri string) (r string) {
 	j := gjson.New(SSStr)
 	j.Set("servers.0.address", that.Address)
 	j.Set("servers.0.port", that.Port)
-	j.Set("servers.0.users.0.user", that.Username)
-	j.Set("servers.0.users.0.pass", that.Password)
+	j.Set("servers.0.method", that.Method)
+	j.Set("servers.0.password", that.Password)
 	serverStr := j.MustToJsonIndentString()
-	streamStr := "{}"
+	streamStr := `{"network":"tcp,udp"}`
 	confStr := fmt.Sprintf(XrayConfStr, serverStr, streamStr)
 	j = gjson.New(confStr)
-	j.Set("outbounds.0.protocol", "ss")
+	j.Set("outbounds.0.protocol", "shadowsocks")
 	return j.MustToJsonIndentString()
 }
 
 func (that *SSOutbound) GetRawUri() string {
 	return that.Raw
+}
+
+func TestSS(rawUri string) {
+	s := &SSOutbound{}
+	fmt.Println(s.GetConfigStr(rawUri))
 }

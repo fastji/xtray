@@ -36,16 +36,16 @@ func NewXClient() *XClient {
 }
 
 func (that *XClient) setOutbound(rawUri string) {
-	that.RawUri = rawUri
-	if strings.HasPrefix("vmess://", rawUri) {
+	that.RawUri = strings.TrimSpace(rawUri)
+	if strings.HasPrefix(rawUri, "vmess://") {
 		that.Out = &VmessOutbound{}
-	} else if strings.HasPrefix("vless://", rawUri) {
+	} else if strings.HasPrefix(rawUri, "vless://") {
 		that.Out = &VlessOutbound{}
-	} else if strings.HasPrefix("ss://", rawUri) {
+	} else if strings.HasPrefix(rawUri, "ss://") {
 		that.Out = &SSOutbound{}
-	} else if strings.HasPrefix("ssr://", rawUri) {
+	} else if strings.HasPrefix(rawUri, "ssr://") {
 		that.Out = &SSROutbound{}
-	} else if strings.HasPrefix("trojan://", rawUri) {
+	} else if strings.HasPrefix(rawUri, "trojan://") {
 		that.Out = &TrojanOutboud{}
 	} else {
 		fmt.Println("Unsupported vpn uri: ", rawUri)

@@ -63,13 +63,13 @@ func (that *SSROutbound) parsePassword(str string) {
 	if len(vlist) == 2 {
 		vlist = strings.Split(vlist[1], "/")
 		if len(vlist) > 1 {
-			that.Method = utils.DecodeBase64(utils.NormalizeSSR(vlist[0]))
+			that.Password = utils.DecodeBase64(utils.NormalizeSSR(vlist[0]))
 		}
 	}
 }
 
 func (that *SSROutbound) parse(rawUri string) {
-	if strings.HasSuffix(rawUri, "ssr://") {
+	if strings.HasPrefix(rawUri, "ssr://") {
 		r := strings.ReplaceAll(rawUri, "ssr://", "")
 		r = utils.DecodeBase64(utils.NormalizeSSR(r))
 		vlist := strings.SplitN(r, ":", 3)
@@ -95,10 +95,15 @@ func (that *SSROutbound) GetConfigStr(rawUri string) (r string) {
 	streamStr := "{}"
 	confStr := fmt.Sprintf(XrayConfStr, serverStr, streamStr)
 	j = gjson.New(confStr)
-	j.Set("outbounds.0.protocol", "ssr")
+	j.Set("outbounds.0.protocol", "shadowsocks")
 	return j.MustToJsonIndentString()
 }
 
 func (that *SSROutbound) GetRawUri() string {
 	return that.Raw
+}
+
+func TestSSR(rawUri string) {
+	s := &SSROutbound{}
+	fmt.Println(s.GetConfigStr(rawUri))
 }

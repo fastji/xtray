@@ -16,6 +16,10 @@ func NormalizeSSR(s string) (r string) {
 }
 
 func DecodeBase64(str string) (res string) {
+	count := len(str) % 4
+	for i := 0; i < count; i++ {
+		str += "="
+	}
 	if s, err := base64.StdEncoding.DecodeString(str); err == nil {
 		res = string(s)
 	}

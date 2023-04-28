@@ -82,3 +82,8 @@ func (that *VlessOutbound) GetConfigStr(rawUri string) string {
 func (that *VlessOutbound) GetRawUri() string {
 	return that.Raw
 }
+
+func TestVless(rawUri string) {
+	v := &VlessOutbound{}
+	fmt.Println(v.GetConfigStr(rawUri))
+}

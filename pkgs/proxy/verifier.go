@@ -93,7 +93,7 @@ func (that *Verifier) getRawList() (result []string) {
 	result = append(result, that.RawProxies.VmessList.List...)
 	result = append(result, that.RawProxies.VlessList.List...)
 	result = append(result, that.RawProxies.SSList.List...)
-	result = append(result, that.RawProxies.SSRList.List...)
+	// result = append(result, that.RawProxies.SSRList.List...)
 	result = append(result, that.RawProxies.Trojan.List...)
 	return
 }
@@ -158,7 +158,7 @@ func (that *Verifier) sendReq(param *client.ClientParams, wait chan struct{}) {
 	resp, err := c.Get(that.conf.TestUrl)
 	timeLag := time.Since(startTime).Milliseconds()
 	if err != nil {
-		fmt.Println("[Verify url failed] ", err)
+		fmt.Println("[Verify url failed] ", param.RawUri, " ", err)
 		that.stopXClient(wait)
 		return
 	}

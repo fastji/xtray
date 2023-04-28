@@ -3,8 +3,10 @@ package client
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gogf/gf/encoding/gjson"
+	"github.com/moqsien/xtray/pkgs/utils"
 )
 
 /*
@@ -26,7 +28,7 @@ var VmessStr string = `{
 		"users": [{
 			"id": "5783a3e7-e373-51cd-8642-c83782b807c5",
 			"alterId": 0,
-			"security": "auto",
+			"security": "none",
 			"level": 0
 		}]
 	}]
@@ -54,6 +56,10 @@ vmess://eyJ2IjogIjIiLCAicHMiOiAiZ2l0aHViLmNvbS9mcmVlZnEgLSBcdTdmOGVcdTU2ZmRDbG91
 
 func (that *VmessOutbound) parse(rawUri string) {
 	that.Raw = rawUri
+	if strings.HasPrefix(rawUri, "vmess://") {
+		rawUri = strings.ReplaceAll(rawUri, "vmess://", "")
+	}
+	rawUri = utils.DecodeBase64(rawUri)
 	j := gjson.New(rawUri)
 	that.Address = j.GetString("add")
 	that.Host = j.GetString("host")
@@ -90,4 +96,9 @@ func (that *VmessOutbound) GetConfigStr(rawUri string) string {
 
 func (that *VmessOutbound) GetRawUri() string {
 	return that.Raw
+}
+
+func TestVmess(rawUri string) {
+	v := &VmessOutbound{}
+	fmt.Println(v.GetConfigStr(rawUri))
 }
