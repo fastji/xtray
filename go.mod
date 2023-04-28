@@ -7,6 +7,7 @@ require (
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/gogf/gf v1.16.9
 	github.com/moqsien/free v0.0.0-20230424044316-6c5663359ea3
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/xtls/xray-core v1.8.1
 )
 

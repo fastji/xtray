@@ -23,15 +23,15 @@ import (
 )
 
 type VerifiedList struct {
-	List       []*Proxy `json:"list"`
+	FreeList   []*Proxy `json:"free_list"`
 	UpdateTime string   `json:"update_time"`
 	path       string
 }
 
 func NewVerifiedList(p string) *VerifiedList {
 	return &VerifiedList{
-		List: []*Proxy{},
-		path: p,
+		FreeList: []*Proxy{},
+		path:     p,
 	}
 }
 
@@ -40,6 +40,8 @@ func (that *VerifiedList) Save() {
 		that.UpdateTime = time.Now().Format("2006-01-02 15:04:05")
 		if content, err := json.MarshalIndent(that, "", "    "); err == nil {
 			os.WriteFile(that.path, content, os.ModePerm)
+		} else {
+			fmt.Println(err)
 		}
 	}
 }
@@ -52,11 +54,23 @@ func (that *VerifiedList) Reload() error {
 	return json.Unmarshal(content, that)
 }
 
+func (that *VerifiedList) GetByIndex(idx int) (p string) {
+	that.Reload()
+	if len(that.FreeList) == 0 {
+		return
+	}
+	if idx < 0 || idx >= len(that.path) {
+		idx = 0
+	}
+	return that.FreeList[idx].RawUri
+}
+
 type Verifier struct {
 	conf            *conf.Conf
 	RawProxies      *runner.Result
 	VerifiedProxies *VerifiedList
 	ProxyChan       chan IProxy
+	IsRunning       bool
 	fetcher         *Fetcher
 	wg              *sync.WaitGroup
 	lock            *sync.RWMutex
@@ -168,7 +182,7 @@ func (that *Verifier) sendReq(param *client.ClientParams, wait chan struct{}) {
 	if strings.Contains(buf.String(), "</html>") {
 		p := &Proxy{RawUri: param.RawUri, RTT: int(timeLag)}
 		that.lock.Lock()
-		that.VerifiedProxies.List = append(that.VerifiedProxies.List, p)
+		that.VerifiedProxies.FreeList = append(that.VerifiedProxies.FreeList, p)
 		that.lock.Unlock()
 	}
 	that.stopXClient(wait)
@@ -203,7 +217,8 @@ func (that *Verifier) RunXClient(port int) {
 }
 
 func (that *Verifier) Run(force bool) {
-	that.VerifiedProxies = &VerifiedList{List: []*Proxy{}}
+	that.IsRunning = true
+	that.VerifiedProxies = NewVerifiedList(that.conf.PorxyFile)
 	that.Reload(force)
 	go that.dispatchProxies()
 	time.Sleep(time.Millisecond * 50)
@@ -217,4 +232,5 @@ func (that *Verifier) Run(force bool) {
 	}
 	that.wg.Wait()
 	that.VerifiedProxies.Save()
+	that.IsRunning = false
 }
