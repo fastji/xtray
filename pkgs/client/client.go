@@ -22,6 +22,7 @@ type ClientParams struct {
 type IOutbound interface {
 	GetConfigStr(string) string
 	GetRawUri() string
+	GetString() string
 }
 
 type XClient struct {

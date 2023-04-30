@@ -83,6 +83,10 @@ func (that *VlessOutbound) GetRawUri() string {
 	return that.Raw
 }
 
+func (that *VlessOutbound) GetString() string {
+	return fmt.Sprintf("vless://%s:%d", that.Address, that.Port)
+}
+
 func TestVless(rawUri string) {
 	v := &VlessOutbound{}
 	fmt.Println(v.GetConfigStr(rawUri))

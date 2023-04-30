@@ -82,6 +82,10 @@ func (that *TrojanOutboud) GetRawUri() string {
 	return that.Raw
 }
 
+func (that *TrojanOutboud) GetString() string {
+	return fmt.Sprintf("trojan://%s:%d", that.Address, that.Port)
+}
+
 func TestTrojan(rawUri string) {
 	t := &TrojanOutboud{}
 	fmt.Println(t.GetConfigStr(rawUri))

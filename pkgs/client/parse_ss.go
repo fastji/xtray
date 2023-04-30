@@ -82,6 +82,10 @@ func (that *SSOutbound) GetRawUri() string {
 	return that.Raw
 }
 
+func (that *SSOutbound) GetString() string {
+	return fmt.Sprintf("shadowsocks://%s:%d", that.Address, that.Port)
+}
+
 func TestSS(rawUri string) {
 	s := &SSOutbound{}
 	fmt.Println(s.GetConfigStr(rawUri))
