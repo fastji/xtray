@@ -17,52 +17,47 @@ import (
 	"github.com/Asutorufa/yuhaiin/pkg/protos/node/point"
 	"github.com/Asutorufa/yuhaiin/pkg/protos/node/protocol"
 	"github.com/moqsien/free/pkgs/runner"
-	"github.com/moqsien/free/pkgs/utils"
+	futils "github.com/moqsien/free/pkgs/utils"
 	"github.com/moqsien/xtray/pkgs/client"
 	"github.com/moqsien/xtray/pkgs/conf"
+	"github.com/moqsien/xtray/pkgs/utils"
 )
 
+type VList struct {
+	List       []*Proxy `koanf,json:"list"`
+	UpdateTime string   `koanf,json:"update_time"`
+}
+
 type VerifiedList struct {
-	FreeList   []*Proxy `json:"free_list"`
-	UpdateTime string   `json:"update_time"`
-	path       string
+	VList *VList
+	*utils.Koanfer
 }
 
 func NewVerifiedList(p string) *VerifiedList {
 	return &VerifiedList{
-		FreeList: []*Proxy{},
-		path:     p,
+		VList:   &VList{List: []*Proxy{}},
+		Koanfer: utils.NewKoanfer(p),
 	}
 }
 
 func (that *VerifiedList) Save() {
-	if that.path != "" {
-		that.UpdateTime = time.Now().Format("2006-01-02 15:04:05")
-		if content, err := json.MarshalIndent(that, "", "    "); err == nil {
-			os.WriteFile(that.path, content, os.ModePerm)
-		} else {
-			fmt.Println(err)
-		}
-	}
+	that.VList.UpdateTime = time.Now().Format("2006-01-02 15:04:05")
+	that.Koanfer.Save(that.VList)
 }
 
-func (that *VerifiedList) Reload() error {
-	content, err := os.ReadFile(that.path)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(content, that)
+func (that *VerifiedList) Load() {
+	that.Koanfer.Load(that.VList)
 }
 
 func (that *VerifiedList) GetByIndex(idx int) (p string) {
-	that.Reload()
-	if len(that.FreeList) == 0 {
+	that.Load()
+	if len(that.VList.List) == 0 {
 		return
 	}
-	if idx < 0 || idx >= len(that.path) {
+	if idx < 0 || idx >= len(that.VList.List) {
 		idx = 0
 	}
-	return that.FreeList[idx].RawUri
+	return that.VList.List[idx].RawUri
 }
 
 type Verifier struct {
@@ -95,7 +90,7 @@ func NewVerifier(conf *conf.Conf) *Verifier {
 }
 
 func (that *Verifier) Reload(force bool) {
-	if ok, _ := utils.PathIsExist(that.conf.RawProxyFile); !ok || force {
+	if ok, _ := futils.PathIsExist(that.conf.RawProxyFile); !ok || force {
 		that.fetcher.GetFile()
 	}
 	if rawProxy, err := os.ReadFile(that.conf.RawProxyFile); err == nil {
@@ -182,7 +177,7 @@ func (that *Verifier) sendReq(param *client.ClientParams, wait chan struct{}) {
 	if strings.Contains(buf.String(), "</html>") {
 		p := &Proxy{RawUri: param.RawUri, RTT: int(timeLag)}
 		that.lock.Lock()
-		that.VerifiedProxies.FreeList = append(that.VerifiedProxies.FreeList, p)
+		that.VerifiedProxies.VList.List = append(that.VerifiedProxies.VList.List, p)
 		that.lock.Unlock()
 	}
 	that.stopXClient(wait)

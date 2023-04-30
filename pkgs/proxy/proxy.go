@@ -6,8 +6,8 @@ type IProxy interface {
 }
 
 type Proxy struct {
-	RawUri string `json:"raw_uri"`
-	RTT    int    `json:"rtt"`
+	RawUri string `koanf,json:"raw_uri"`
+	RTT    int    `koanf,json:"rtt"`
 }
 
 func (that *Proxy) GetRawUri() string {
