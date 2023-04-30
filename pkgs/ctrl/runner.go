@@ -5,10 +5,14 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mholt/archiver/v3"
+	"github.com/moqsien/free/pkgs/query"
+	futils "github.com/moqsien/free/pkgs/utils"
 	"github.com/moqsien/goktrl"
 	"github.com/moqsien/xtray/pkgs/client"
 	"github.com/moqsien/xtray/pkgs/conf"
@@ -242,12 +246,43 @@ func (that *XRunner) initCtrl() {
 	})
 
 	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
-		Name:        "omega",
-		Help:        "Download switchy-omega plugin for Google Chrome Browser.",
-		Func:        func(c *goktrl.Context) {},
+		Name: "omega",
+		Help: "Download switchy-omega plugin for Google Chrome Browser.",
+		Func: func(c *goktrl.Context) {
+			omegaPath := that.SwitchyOmega()
+			if ok, _ := futils.PathIsExist(omegaPath); ok {
+				fmt.Println("switchy-omega is unarchived in: ", omegaPath)
+			} else {
+				fmt.Println("download switchy-omega failed.")
+			}
+		},
 		KtrlHandler: func(c *goktrl.Context) {},
 		SocketName:  that.KtrlSocks,
 	})
+}
+
+func (that *XRunner) SwitchyOmega() (omegaPath string) {
+	omegaPath = filepath.Join(that.Conf.WorkDir, "switchy_omega")
+	if ok, _ := futils.PathIsExist(omegaPath); ok {
+		fmt.Println("[Archive Path] ", omegaPath)
+		return
+	}
+	fName := "switchy-omega.zip"
+	fpath := filepath.Join(that.Conf.WorkDir, fName)
+	d := query.NewDownloader(that.Conf.SwitchyOmegaUrl)
+	d.File(fpath)
+	if ok, _ := futils.PathIsExist(fpath); ok {
+		if err := archiver.Unarchive(fpath, omegaPath); err != nil {
+			os.RemoveAll(fpath)
+			os.RemoveAll(omegaPath)
+			fmt.Println("[Unarchive failed] ", err)
+			return
+		} else {
+			fmt.Println("Swithy-Omega Download Succeeded.")
+			fmt.Println("[Archive Path] ", omegaPath)
+		}
+	}
+	return
 }
 
 func (that *XRunner) CtrlServer() {

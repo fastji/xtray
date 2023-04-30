@@ -15,14 +15,15 @@ type VPortRange struct {
 }
 
 type Conf struct {
-	FetcherUrl   string      `json:"fetcher_url"`
-	WorkDir      string      `json:"work_dir"`
-	RawProxyFile string      `json:"raw_file"`
-	PorxyFile    string      `json:"proxy_file"`
-	PortRange    *VPortRange `json:"port_range"`
-	Port         int         `json:"port"`
-	TestUrl      string      `json:"test_url"`
-	Timeout      int         `json:"timeout"`
+	FetcherUrl      string      `json:"fetcher_url"`
+	WorkDir         string      `json:"work_dir"`
+	RawProxyFile    string      `json:"raw_file"`
+	PorxyFile       string      `json:"proxy_file"`
+	PortRange       *VPortRange `json:"port_range"`
+	Port            int         `json:"port"`
+	TestUrl         string      `json:"test_url"`
+	SwitchyOmegaUrl string      `json:"omega_url"`
+	Timeout         int         `json:"timeout"`
 }
 
 var DefaultWorkDir = filepath.Join(utils.GetHomeDir(), ".gvc/proxy_files")
@@ -36,6 +37,7 @@ func NewConf() (conf *Conf) {
 	conf.PortRange = &VPortRange{2020, 2150}
 	conf.Port = 2019
 	conf.TestUrl = "https://www.google.com"
+	conf.SwitchyOmegaUrl = "https://gitee.com/moqsien/gvc/releases/download/v1/switch-omega.zip"
 	conf.Timeout = 3
 	return
 }
