@@ -3,8 +3,11 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"flag"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
 	"os/user"
 	"strings"
 )
@@ -37,4 +40,23 @@ func GetHomeDir() (homeDir string) {
 		return
 	}
 	return u.HomeDir
+}
+
+const (
+	IsChildEnv     = "XTRAY_IS_CHILD_PROCESS"
+	IsChildProcess = "XTRAY_IS_CHILD_PROCESS=true"
+)
+
+func DaemonizeInit() {
+	isChild := os.Getenv(IsChildEnv)
+	if isChild == "" {
+		cmd := exec.Command(os.Args[0], flag.Args()...)
+		cmd.Env = append(os.Environ(), IsChildProcess)
+		if err := cmd.Start(); err != nil {
+			fmt.Printf("start %s failed, error: %v\n", os.Args[0], err)
+			os.Exit(1)
+		}
+		fmt.Printf("%s [PID] %d running...\n", os.Args[0], cmd.Process.Pid)
+		os.Exit(0)
+	}
 }
