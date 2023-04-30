@@ -6,6 +6,7 @@ require (
 	github.com/Asutorufa/yuhaiin v0.3.1-rc.7
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/gogf/gf v1.16.9
+	github.com/knadh/koanf v1.5.0
 	github.com/moqsien/free v0.0.0-20230424044316-6c5663359ea3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/xtls/xray-core v1.8.1
@@ -21,6 +22,7 @@ require (
 	github.com/antchfx/xpath v1.2.4 // indirect
 	github.com/clbanning/mxj v1.8.5-0.20200714211355-ff02cfb8ea28 // indirect
 	github.com/dgryski/go-metro v0.0.0-20211217172704-adc40b04c140 // indirect
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/gaukas/godicttls v0.0.3 // indirect
@@ -37,6 +39,9 @@ require (
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/miekg/dns v1.1.53 // indirect
+	github.com/mitchellh/copystructure v1.2.0 // indirect
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pires/go-proxyproto v0.7.0 // indirect
