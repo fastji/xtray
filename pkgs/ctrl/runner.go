@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,35 +25,40 @@ import (
 var StopChan = make(chan struct{})
 
 const (
-	XtrayOK = "ok"
+	ExtraSocksName = "xtray_runner"
+	KtrlSocksName  = "xtray_ktrl"
+	XtrayOK        = "ok"
 )
 
 type XRunner struct {
-	Client    *client.XClient
-	Verifier  *proxy.Verifier
-	Conf      *conf.Conf
-	Cron      *cron.Cron
-	AddSocks  string
-	KtrlSocks string
-	Ktrcl     *goktrl.Ktrl
-	starters  []*exec.Cmd
+	Client     *client.XClient
+	Verifier   *proxy.Verifier
+	XKeeper    *XKeeper
+	Conf       *conf.Conf
+	Cron       *cron.Cron
+	ExtraSocks string
+	KtrlSocks  string
+	Ktrl       *goktrl.Ktrl
+	starter    *exec.Cmd
+	keeper     *exec.Cmd
 }
 
-func NewXRunner(cnf *conf.Conf) *XRunner {
-	return &XRunner{
-		Client:    client.NewXClient(),
-		Verifier:  proxy.NewVerifier(cnf),
-		Conf:      cnf,
-		Cron:      cron.New(),
-		AddSocks:  "xtray_runner",
-		KtrlSocks: "xtray_ktrl",
-		Ktrcl:     goktrl.NewKtrl(),
-		starters:  []*exec.Cmd{},
+func NewXRunner(cnf *conf.Conf) (r *XRunner) {
+	r = &XRunner{
+		Client:     client.NewXClient(),
+		Verifier:   proxy.NewVerifier(cnf),
+		Conf:       cnf,
+		Cron:       cron.New(),
+		ExtraSocks: ExtraSocksName,
+		KtrlSocks:  KtrlSocksName,
+		Ktrl:       goktrl.NewKtrl(),
 	}
+	r.XKeeper = NewXKeeper(cnf, r)
+	return r
 }
 
 func (that *XRunner) runServer() {
-	server := utils.NewUServer(that.AddSocks)
+	server := utils.NewUServer(that.ExtraSocks)
 	server.AddHandler("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, XtrayOK)
 	})
@@ -60,7 +66,7 @@ func (that *XRunner) runServer() {
 }
 
 func (that *XRunner) PingXtray() bool {
-	xc := utils.NewUClient(that.AddSocks)
+	xc := utils.NewUClient(that.ExtraSocks)
 	if resp, _ := xc.GetResp("/ping", map[string]string{}); resp == XtrayOK {
 		return true
 	}
@@ -76,7 +82,11 @@ func (that *XRunner) Start() {
 	if !that.Verifier.IsRunning {
 		that.Verifier.Run(true)
 	}
-	that.Cron.AddFunc("@every 2h", func() {
+	cronTime := that.Conf.VerifierCron
+	if !strings.HasPrefix(cronTime, "@every") {
+		cronTime = "@every 2h"
+	}
+	that.Cron.AddFunc(cronTime, func() {
 		if !that.Verifier.IsRunning {
 			that.Verifier.Run(false)
 		}
@@ -109,32 +119,48 @@ func (that *XRunner) Stop() {
 }
 
 func (that *XRunner) RegisterStarter(starter *exec.Cmd) {
-	that.starters = append(that.starters, starter)
+	that.starter = starter
+}
+
+func (that *XRunner) RegisterKeeper(keeper *exec.Cmd) {
+	that.keeper = keeper
 }
 
 // TODO: ctrl shell
 func (that *XRunner) initCtrl() {
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "start",
 		Help: "Start an xray-core client.",
 		Func: func(c *goktrl.Context) {
-			if len(that.starters) == 0 {
-				fmt.Println("No [starter] has been registered.")
+			if that.starter == nil {
+				fmt.Println("Please register a starter first.")
 				return
 			}
+			if err := that.starter.Run(); err != nil {
+				fmt.Println("Start a client failed: ", err)
+				return
+			} else {
+				fmt.Println("Starting a client...")
+				time.Sleep(time.Second * 3)
+				if that.PingXtray() {
+					fmt.Println("Start a client succeeded.")
+					return
+				}
+				fmt.Println("Please check client status.")
+			}
 
-			for _, starter := range that.starters {
-				if err := starter.Run(); err != nil {
-					fmt.Println("Start a client failed: ", err)
+			if that.keeper != nil {
+				if err := that.keeper.Run(); err != nil {
+					fmt.Println("Start a keeper failed: ", err)
 					return
 				} else {
-					fmt.Println("Starting a client...")
+					fmt.Println("Starting a keeper...")
 					time.Sleep(time.Second * 3)
 					if that.PingXtray() {
-						fmt.Println("Start a client succeeded.")
+						fmt.Println("Start a keeper succeeded.")
 						return
 					}
-					fmt.Println("Please check client status.")
+					fmt.Println("Please check keeper status.")
 				}
 			}
 		},
@@ -142,7 +168,7 @@ func (that *XRunner) initCtrl() {
 		SocketName:  that.KtrlSocks,
 	})
 
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "stop",
 		Help: "Stop the running xray-core client.",
 		Func: func(c *goktrl.Context) {
@@ -160,7 +186,7 @@ func (that *XRunner) initCtrl() {
 		SocketName: that.KtrlSocks,
 	})
 
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "restart",
 		Help: "Restart the running xray-core client.",
 		Func: func(c *goktrl.Context) {
@@ -181,7 +207,7 @@ func (that *XRunner) initCtrl() {
 		SocketName: that.KtrlSocks,
 	})
 
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "show",
 		Help: "Show vpn list info.",
 		Func: func(c *goktrl.Context) {
@@ -209,7 +235,7 @@ func (that *XRunner) initCtrl() {
 		Force bool `alias:"f" descr:"Force to get new raw vpn list."`
 	}
 
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "filter",
 		Help: "Filter vpns by verifier.",
 		Opts: &filterOpts{},
@@ -231,21 +257,26 @@ func (that *XRunner) initCtrl() {
 		SocketName: that.KtrlSocks,
 	})
 
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "status",
 		Help: "Show xray-core client running status.",
 		Func: func(c *goktrl.Context) {
 			if that.PingXtray() {
 				fmt.Println("xray-core client is running.")
-				return
+			} else {
+				fmt.Println("xray-core client is stopped.")
 			}
-			fmt.Println("xray-core client is stopped.")
+			if that.XKeeper.PingKeeper() {
+				fmt.Println("client keeper is running.")
+			} else {
+				fmt.Println("client keeper is stopped.")
+			}
 		},
 		KtrlHandler: func(c *goktrl.Context) {},
 		SocketName:  that.KtrlSocks,
 	})
 
-	that.Ktrcl.AddKtrlCommand(&goktrl.KCommand{
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "omega",
 		Help: "Download switchy-omega plugin for Google Chrome Browser.",
 		Func: func(c *goktrl.Context) {
@@ -287,8 +318,10 @@ func (that *XRunner) SwitchyOmega() (omegaPath string) {
 
 func (that *XRunner) CtrlServer() {
 	that.initCtrl()
+	that.Ktrl.RunCtrl(that.KtrlSocks)
 }
 
 func (that *XRunner) CtrlShell() {
 	that.initCtrl()
+	that.Ktrl.RunShell(that.KtrlSocks)
 }

@@ -24,6 +24,8 @@ type Conf struct {
 	TestUrl         string      `json:"test_url"`
 	SwitchyOmegaUrl string      `json:"omega_url"`
 	Timeout         int         `json:"timeout"`
+	VerifierCron    string      `json:"verifier_cron"`
+	KeeperCron      string      `json:"keeper_cron"`
 }
 
 var DefaultWorkDir = filepath.Join(utils.GetHomeDir(), ".gvc/proxy_files")
@@ -39,5 +41,8 @@ func NewConf() (conf *Conf) {
 	conf.TestUrl = "https://www.google.com"
 	conf.SwitchyOmegaUrl = "https://gitee.com/moqsien/gvc/releases/download/v1/switch-omega.zip"
 	conf.Timeout = 3
+	// "@every 1h30m10s" https://pkg.go.dev/github.com/robfig/cron
+	conf.VerifierCron = "@every 2h"
+	conf.KeeperCron = "@every 3m"
 	return
 }
