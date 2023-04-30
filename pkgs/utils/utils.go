@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -50,7 +49,7 @@ const (
 func DaemonizeInit() {
 	isChild := os.Getenv(IsChildEnv)
 	if isChild == "" {
-		cmd := exec.Command(os.Args[0], flag.Args()...)
+		cmd := exec.Command(os.Args[0], os.Args[1:]...)
 		cmd.Env = append(os.Environ(), IsChildProcess)
 		if err := cmd.Start(); err != nil {
 			fmt.Printf("start %s failed, error: %v\n", os.Args[0], err)

@@ -57,9 +57,9 @@ func NewXRunner(cnf *conf.Conf) (r *XRunner) {
 	return r
 }
 
-func (that *XRunner) runServer() {
+func (that *XRunner) runPingServer() {
 	server := utils.NewUServer(that.ExtraSocks)
-	server.AddHandler("/ping", func(c *gin.Context) {
+	server.AddHandler("/pingClient", func(c *gin.Context) {
 		c.String(http.StatusOK, XtrayOK)
 	})
 	server.Start()
@@ -67,7 +67,7 @@ func (that *XRunner) runServer() {
 
 func (that *XRunner) PingXtray() bool {
 	xc := utils.NewUClient(that.ExtraSocks)
-	if resp, _ := xc.GetResp("/ping", map[string]string{}); resp == XtrayOK {
+	if resp, _ := xc.GetResp("/pingClient", map[string]string{}); strings.Contains(resp, XtrayOK) {
 		return true
 	}
 	return false
@@ -91,9 +91,10 @@ func (that *XRunner) Start() {
 			that.Verifier.Run(false)
 		}
 	})
-	that.Cron.Start()
-	go that.runServer()
+	go that.runPingServer()
+	go that.CtrlServer()
 	that.Restart(0)
+	that.Cron.Start()
 	<-StopChan
 	os.Exit(0)
 }
@@ -213,18 +214,22 @@ func (that *XRunner) initCtrl() {
 		Func: func(c *goktrl.Context) {
 			that.Verifier.Reload(false)
 			fmt.Println("Raw free vpn list statistics: ")
-			fmt.Printf("vmess: %d, vless: %d, ss: %d, ssr: %d, trojan: %d, updated_at: %s",
+			r := fmt.Sprintf("vmess[%d], vless[%d], ss[%d], ssr[%d], trojan[%d], update[@%s]",
 				that.Verifier.RawProxies.VmessList.Total,
 				that.Verifier.RawProxies.VlessList.Total,
 				that.Verifier.RawProxies.SSList.Total,
 				that.Verifier.RawProxies.SSRList.Total,
 				that.Verifier.RawProxies.Trojan.Total,
 				that.Verifier.RawProxies.UpdateTime)
+			fmt.Println(r)
+			fmt.Println("------------------------------------------------")
 			verifiedList := proxy.NewVerifiedList(that.Conf.PorxyFile)
 			verifiedList.Load()
-			fmt.Printf("verifed vpn list(@%s): ", verifiedList.VList.UpdateTime)
+			r = fmt.Sprintf("verifed vpn list(@%s): ", verifiedList.VList.UpdateTime)
+			fmt.Println(r)
 			for idx, v := range verifiedList.VList.List {
-				fmt.Printf("%d. %s| rtt: %dms", idx, client.ParseRawUri(v.RawUri), v.RTT)
+				r = fmt.Sprintf("%d. %s | rtt [%dms]", idx, client.ParseRawUri(v.RawUri), v.RTT)
+				fmt.Println(r)
 			}
 		},
 		KtrlHandler: func(c *goktrl.Context) {},
@@ -262,14 +267,15 @@ func (that *XRunner) initCtrl() {
 		Help: "Show xray-core client running status.",
 		Func: func(c *goktrl.Context) {
 			if that.PingXtray() {
-				fmt.Println("xray-core client is running.")
+				fmt.Println("xtray client is running.")
 			} else {
-				fmt.Println("xray-core client is stopped.")
+				fmt.Println("xtray client is stopped.")
 			}
+
 			if that.XKeeper.PingKeeper() {
-				fmt.Println("client keeper is running.")
+				fmt.Println("xtray keeper is running.")
 			} else {
-				fmt.Println("client keeper is stopped.")
+				fmt.Println("xtray keeper is stopped.")
 			}
 		},
 		KtrlHandler: func(c *goktrl.Context) {},
@@ -289,6 +295,25 @@ func (that *XRunner) initCtrl() {
 		},
 		KtrlHandler: func(c *goktrl.Context) {},
 		SocketName:  that.KtrlSocks,
+	})
+
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
+		Name: "current",
+		Help: "Show current vpn.",
+		Func: func(c *goktrl.Context) {
+			result, _ := c.GetResult()
+			if len(result) > 0 {
+				fmt.Println(string(result))
+			}
+		},
+		KtrlHandler: func(c *goktrl.Context) {
+			if that.Client.Instance != nil {
+				c.Send(client.ParseRawUri(that.Client.RawUri), 200)
+			} else {
+				c.Send("No vpn is choosen.", 200)
+			}
+		},
+		SocketName: that.KtrlSocks,
 	})
 }
 
