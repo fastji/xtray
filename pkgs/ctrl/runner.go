@@ -1,7 +1,9 @@
 package ctrl
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -11,8 +13,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gocolly/colly"
 	"github.com/mholt/archiver/v3"
-	"github.com/moqsien/free/pkgs/query"
 	futils "github.com/moqsien/free/pkgs/utils"
 	"github.com/moqsien/goktrl"
 	"github.com/moqsien/xtray/pkgs/client"
@@ -41,6 +43,7 @@ type XRunner struct {
 	Ktrl       *goktrl.Ktrl
 	starter    *exec.Cmd
 	keeper     *exec.Cmd
+	collector  *colly.Collector
 }
 
 func NewXRunner(cnf *conf.Conf) (r *XRunner) {
@@ -52,6 +55,7 @@ func NewXRunner(cnf *conf.Conf) (r *XRunner) {
 		ExtraSocks: ExtraSocksName,
 		KtrlSocks:  KtrlSocksName,
 		Ktrl:       goktrl.NewKtrl(),
+		collector:  colly.NewCollector(),
 	}
 	r.XKeeper = NewXKeeper(cnf, r)
 	return r
@@ -329,8 +333,15 @@ func (that *XRunner) SwitchyOmega() (omegaPath string) {
 	}
 	fName := "switchy-omega.zip"
 	fpath := filepath.Join(that.Conf.WorkDir, fName)
-	d := query.NewDownloader(that.Conf.SwitchyOmegaUrl)
-	d.File(fpath)
+
+	that.collector.OnResponse(func(r *colly.Response) {
+		reader := bytes.NewReader(r.Body)
+		body, _ := io.ReadAll(reader)
+		if err := os.WriteFile(fpath, body, os.ModePerm); err != nil {
+			fmt.Println(r.Request.URL, ": ", err)
+		}
+	})
+	that.collector.Visit(that.Conf.SwitchyOmegaUrl)
 	if ok, _ := futils.PathIsExist(fpath); ok {
 		if err := archiver.Unarchive(fpath, omegaPath); err != nil {
 			os.RemoveAll(fpath)

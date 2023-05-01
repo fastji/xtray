@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/Asutorufa/yuhaiin v0.3.1-rc.7
 	github.com/gin-gonic/gin v1.9.0
+	github.com/gocolly/colly v1.2.0
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/gogf/gf v1.16.9
 	github.com/knadh/koanf v1.5.0
