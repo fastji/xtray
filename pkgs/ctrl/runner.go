@@ -406,7 +406,6 @@ func (that *XRunner) GetGeoInfo() (fgeoip, fgeosite string) {
 			} else {
 				os.RemoveAll(fpath)
 				fmt.Println("geoip.dat & geosite.dat download succeeded.")
-				fmt.Println("[archive path] ", currentDir)
 			}
 		}
 	}
