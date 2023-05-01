@@ -36,7 +36,7 @@ func NewConf() (conf *Conf) {
 	conf.FetcherUrl = "https://gitee.com/moqsien/test/raw/master/conf.txt"
 	conf.RawProxyFile = filepath.Join(conf.WorkDir, "raw_proxy.json")
 	conf.PorxyFile = filepath.Join(conf.WorkDir, "latest.json")
-	conf.PortRange = &VPortRange{2020, 2135}
+	conf.PortRange = &VPortRange{2020, 2075}
 	conf.Port = 2019
 	conf.TestUrl = "https://www.google.com"
 	conf.SwitchyOmegaUrl = "https://gitee.com/moqsien/gvc/releases/download/v1/switch-omega.zip"

@@ -1,6 +1,7 @@
 package ctrl
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -39,15 +40,23 @@ func (that *XKeeper) runServer() {
 	server.AddHandler("/ping", func(c *gin.Context) {
 		c.String(http.StatusOK, XtrayOK)
 	})
-	server.Start()
+	if err := server.Start(); err != nil {
+		fmt.Println("[start server failed] ", err)
+	}
 }
 
 func (that *XKeeper) PingKeeper() bool {
 	xc := utils.NewUClient(that.ksockName)
-	if resp, _ := xc.GetResp("/ping", map[string]string{}); resp == XtrayOK {
-		return true
+	if resp, err := xc.GetResp("/ping", map[string]string{}); err == nil {
+		return strings.Contains(resp, XtrayOK)
 	}
 	return false
+}
+
+func (that *XKeeper) SendQuitSig() string {
+	xc := utils.NewUClient(that.ksockName)
+	resp, _ := xc.GetResp("/stop", map[string]string{})
+	return resp
 }
 
 func (that *XKeeper) checkRunner() {

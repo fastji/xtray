@@ -62,13 +62,15 @@ func (that *XRunner) runPingServer() {
 	server.AddHandler("/pingClient", func(c *gin.Context) {
 		c.String(http.StatusOK, XtrayOK)
 	})
-	server.Start()
+	if err := server.Start(); err != nil {
+		fmt.Println("[start ping server failed] ", err)
+	}
 }
 
 func (that *XRunner) PingXtray() bool {
 	xc := utils.NewUClient(that.ExtraSocks)
-	if resp, _ := xc.GetResp("/pingClient", map[string]string{}); strings.Contains(resp, XtrayOK) {
-		return true
+	if resp, err := xc.GetResp("/pingClient", map[string]string{}); err == nil {
+		return strings.Contains(resp, XtrayOK)
 	}
 	return false
 }
@@ -79,6 +81,8 @@ func (that *XRunner) Start() {
 		return
 	}
 	utils.DaemonizeInit()
+	go that.runPingServer()
+	go that.CtrlServer()
 	if !that.Verifier.IsRunning {
 		that.Verifier.Run(true)
 	}
@@ -91,10 +95,8 @@ func (that *XRunner) Start() {
 			that.Verifier.Run(false)
 		}
 	})
-	go that.runPingServer()
-	go that.CtrlServer()
-	that.Restart(0)
 	that.Cron.Start()
+	that.Restart(0)
 	<-StopChan
 	os.Exit(0)
 }
@@ -145,9 +147,9 @@ func (that *XRunner) initCtrl() {
 				time.Sleep(time.Second * 3)
 				if that.PingXtray() {
 					fmt.Println("Start a client succeeded.")
-					return
+				} else {
+					fmt.Println("Please check client status.")
 				}
-				fmt.Println("Please check client status.")
 			}
 
 			if that.keeper != nil {
@@ -159,9 +161,9 @@ func (that *XRunner) initCtrl() {
 					time.Sleep(time.Second * 3)
 					if that.PingXtray() {
 						fmt.Println("Start a keeper succeeded.")
-						return
+					} else {
+						fmt.Println("Please check keeper status.")
 					}
-					fmt.Println("Please check keeper status.")
 				}
 			}
 		},
@@ -176,13 +178,15 @@ func (that *XRunner) initCtrl() {
 			result, _ := c.GetResult()
 			if len(result) > 0 {
 				fmt.Println(string(result))
-				// TODO: stop keeper
-				// that.sendQuitSignal()
+				// stop keeper
+				resp := that.XKeeper.SendQuitSig()
+				fmt.Println(resp)
 			}
 		},
 		KtrlHandler: func(c *goktrl.Context) {
+			// stop client
 			that.Stop()
-			c.Send("xray-core client stopped.", 200)
+			c.Send("xtray client stopped.", 200)
 		},
 		SocketName: that.KtrlSocks,
 	})
