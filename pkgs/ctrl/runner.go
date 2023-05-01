@@ -291,6 +291,26 @@ func (that *XRunner) initCtrl() {
 	})
 
 	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
+		Name: "geoinfo",
+		Help: "Download geoip.dat and geosite.dat for xray-core.",
+		Func: func(c *goktrl.Context) {
+			fgeoip, fgeosite := that.GetGeoInfo()
+			if ok, _ := futils.PathIsExist(fgeoip); ok {
+				fmt.Println("geoip.dat is unarchived in: ", fgeoip)
+			} else {
+				fmt.Println("download geoip.dat failed.")
+			}
+			if ok, _ := futils.PathIsExist(fgeosite); ok {
+				fmt.Println("geosite.dat is unarchived in: ", fgeosite)
+			} else {
+				fmt.Println("download geosite.dat failed.")
+			}
+		},
+		KtrlHandler: func(c *goktrl.Context) {},
+		SocketName:  that.KtrlSocks,
+	})
+
+	that.Ktrl.AddKtrlCommand(&goktrl.KCommand{
 		Name: "omega",
 		Help: "Download switchy-omega plugin for Google Chrome Browser.",
 		Func: func(c *goktrl.Context) {
@@ -331,9 +351,8 @@ func (that *XRunner) SwitchyOmega() (omegaPath string) {
 		fmt.Println("[Archive Path] ", omegaPath)
 		return
 	}
-	fName := "switchy-omega.zip"
-	fpath := filepath.Join(that.Conf.WorkDir, fName)
 
+	fpath := filepath.Join(that.Conf.WorkDir, "switchy-omega.zip")
 	that.collector.OnResponse(func(r *colly.Response) {
 		reader := bytes.NewReader(r.Body)
 		body, _ := io.ReadAll(reader)
@@ -351,6 +370,44 @@ func (that *XRunner) SwitchyOmega() (omegaPath string) {
 		} else {
 			fmt.Println("Swithy-Omega Download Succeeded.")
 			fmt.Println("[Archive Path] ", omegaPath)
+		}
+	}
+	return
+}
+
+func (that *XRunner) GetGeoInfo() (fgeoip, fgeosite string) {
+	if currentPath, err := os.Executable(); err == nil {
+		currentDir := filepath.Dir(currentPath)
+		fgeoip = filepath.Join(currentDir, "geoip.dat")
+		fgeosite = filepath.Join(currentDir, "geosite.dat")
+		if ok, _ := futils.PathIsExist(fgeoip); ok {
+			os.RemoveAll(fgeoip)
+		}
+		if ok, _ := futils.PathIsExist(fgeosite); ok {
+			os.RemoveAll(fgeosite)
+		}
+		that.collector = colly.NewCollector()
+		fpath := filepath.Join(currentDir, "geoinfo.zip")
+		that.collector.OnResponse(func(r *colly.Response) {
+			reader := bytes.NewReader(r.Body)
+			body, _ := io.ReadAll(reader)
+			if err := os.WriteFile(fpath, body, os.ModePerm); err != nil {
+				fmt.Println(r.Request.URL, ": ", err)
+			}
+		})
+		that.collector.Visit(that.Conf.GeoInfoUrl)
+		if ok, _ := futils.PathIsExist(fpath); ok {
+			if err := archiver.Unarchive(fpath, currentDir); err != nil {
+				os.RemoveAll(fpath)
+				os.RemoveAll(fgeoip)
+				os.RemoveAll(fgeosite)
+				fmt.Println("[Unarchive failed] ", err)
+				return
+			} else {
+				os.RemoveAll(fpath)
+				fmt.Println("geoip.dat & geosite.dat download succeeded.")
+				fmt.Println("[archive path] ", currentDir)
+			}
 		}
 	}
 	return

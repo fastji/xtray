@@ -23,6 +23,7 @@ type Conf struct {
 	Port            int         `json:"port"`
 	TestUrl         string      `json:"test_url"`
 	SwitchyOmegaUrl string      `json:"omega_url"`
+	GeoInfoUrl      string      `json:"geo_info_url"`
 	Timeout         int         `json:"timeout"`
 	VerifierCron    string      `json:"verifier_cron"`
 	KeeperCron      string      `json:"keeper_cron"`
@@ -40,6 +41,7 @@ func NewConf() (conf *Conf) {
 	conf.Port = 2019
 	conf.TestUrl = "https://www.google.com"
 	conf.SwitchyOmegaUrl = "https://gitee.com/moqsien/gvc/releases/download/v1/switch-omega.zip"
+	conf.GeoInfoUrl = "https://gitee.com/moqsien/gvc/releases/download/v1/geoinfo.zip"
 	conf.Timeout = 3
 	// "@every 1h30m10s" https://pkg.go.dev/github.com/robfig/cron
 	conf.VerifierCron = "@every 2h"
